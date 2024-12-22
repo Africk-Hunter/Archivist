@@ -1,13 +1,16 @@
 # WordMe
 
-## Project Structure
+## Description
 
-- `backend/`: Contains the Flask backend.
-- `frontend/`: Contains the Vue.js frontend.
-- `scraper/`: Contains the web scraping script.
+WordMe is a project that includes a Flask backend, a Vue.js frontend, and a web scraping script. The backend serves API endpoints, the frontend provides a user interface, and the scraper collects word definitions from the Merriam-Webster website.
 
-## Setup
+## Technologies Used
 
+- **Backend**: Flask, Python
+- **Frontend**: Vue.js, JavaScript
+- **Web Scraping**: Python, BeautifulSoup, Requests
+- **API**: RESTful API (Flask)
+- **Database**: SQLite (Optional, for storing scraped data)
 ### Backend
 
 1. Navigate to the `backend/` directory.
@@ -26,7 +29,7 @@
 2. Install dependencies: `pip install -r requirements.txt`
 3. Run the scraper: `python scraper.py`
 
-## Running the Project Locally
+### Running the Project Locally
 
 1. Start the backend server by following the steps in the Backend setup section.
 2. Start the frontend server by following the steps in the Frontend setup section.

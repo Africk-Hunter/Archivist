@@ -1,23 +1,55 @@
-import requests
+import aiohttp
+import asyncio
 from bs4 import BeautifulSoup
-import queue
 import re
+import aiosqlite
 
-def find_word_and_definition(url):
+async def init_db():
+    async with aiosqlite.connect('words.db') as db:
+        await db.execute('''CREATE TABLE IF NOT EXISTS words
+                            (word TEXT PRIMARY KEY, definition TEXT)''')
+        await db.commit()
+
+async def save_to_db(word, definition):
+    async with aiosqlite.connect('words.db') as db:
+        await db.execute("INSERT OR IGNORE INTO words (word, definition) VALUES (?, ?)", (word, definition))
+        await db.commit()
+        
+        # Confirm the entry was added
+        async with db.execute("SELECT * FROM words WHERE word = ?", (word,)) as cursor:
+            entry = await cursor.fetchone()
+            if entry:
+                print(f"Confirmed entry: {entry}")
+            else:
+                print(f"Entry for word '{word}' not found.")
+
+def is_word_clean(word):
+    if " " in word or len(word) < 3 or len(word) > 20 or "-" in word:
+        return False
+    return True
+
+async def find_word_and_definition(session, url):
     url = clean_url(url)
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        word = soup.find('h1').text
-        definition = ""
-        found_def = soup.find('div', class_='sense')
-        if found_def is not None:
-            definition = found_def.text
-        
-        print(f"Word: {word}")
-        print(f"Definition: {definition}")
-    except requests.exceptions.RequestException as e:
+        async with session.get(url) as response:
+            response.raise_for_status()
+            text = await response.text()
+            soup = BeautifulSoup(text, 'html.parser')
+            word = soup.find('h1').text.capitalize()
+            definition = ""
+            found_def = soup.find('div', class_='sense')
+            
+            if not is_word_clean(word):
+                print(f"Word '{word}' is not clean. Skipping.")
+                return
+            
+            if found_def is not None:
+                definition = found_def.text
+            
+            print(f"Word: {word}")
+            print(f"Definition: {definition}")
+            await save_to_db(word, definition)
+    except aiohttp.ClientError as e:
         print(f"Failed to retrieve {url}: {e}")
 
 def clean_url(url):
@@ -25,62 +57,54 @@ def clean_url(url):
         return "https://www.merriam-webster.com" + url
     return url
 
-
-def find_urls(soup):
-    url_frontier = queue.Queue()
+async def find_urls(session, soup, visited_urls):
+    url_frontier = []
     for link in soup.find_all('a'):
         href = link.get('href')
-        
-        # If url is a layer one url (link that has more links), add to queue
-        if href and re.search(r'/browse/dictionary/', href):
-            url_frontier.put(href)
-            continue
-        # If url is a layer two url (is a link to a word), scrape word and definition
-        if href and re.search(r'/dictionary/\w+', href):
-            find_word_and_definition(clean_url(href))
-            find_word_and_definition(href)
-            continue
+        if href:
+            full_url = clean_url(href)
+            if full_url not in visited_urls:
+                if re.search(r'/browse/dictionary/', href):
+                    url_frontier.append(full_url)
+                elif re.search(r'/dictionary/\w+', href):
+                    await find_word_and_definition(session, full_url)
+                    visited_urls.add(full_url)
     return url_frontier
 
-def scrape_website_for_urls(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        found_urls = find_urls(soup)
-        return found_urls
-    else:
-        print(f"Failed to retrieve {url}")
-        return None
+async def scrape_website_for_urls(session, url, visited_urls):
+    try:
+        async with session.get(url) as response:
+            response.raise_for_status()
+            text = await response.text()
+            soup = BeautifulSoup(text, 'html.parser')
+            found_urls = await find_urls(session, soup, visited_urls)
+            return found_urls
+    except aiohttp.ClientError as e:
+        print(f"Failed to retrieve {url}: {e}")
+        return []
 
-def clean_url(url):
-    if url.startswith("/"):
-        return "https://www.merriam-webster.com" + url
-    return url
+async def process_queue(url_queue, visited_urls):
+    async with aiohttp.ClientSession() as session:
+        while url_queue:
+            url_to_scrape = url_queue.pop(0)
+            url_to_scrape = clean_url(url_to_scrape)
+            print(f"Processing URL: {url_to_scrape}")
 
-def process_queue(url_queue, visited_urls):
-    while not url_queue.empty():
-        url_to_scrape = url_queue.get()
-        url_to_scrape = clean_url(url_to_scrape)
-        print(f"Processing URL: {url_to_scrape}")
+            if url_to_scrape in visited_urls:
+                print(f"Already visited: {url_to_scrape}")
+                continue
 
-        if url_to_scrape in visited_urls:
-            print(f"Already visited: {url_to_scrape}")
-            continue
+            visited_urls.add(url_to_scrape)
+            scraped_data = await scrape_website_for_urls(session, url_to_scrape, visited_urls)
 
-        scraped = scrape_website_for_urls(url_to_scrape)
-        visited_urls.add(url_to_scrape)
-
-        if scraped:
-            while not scraped.empty():
-                next_url = scraped.get()
-                next_url = clean_url(next_url)
+            for next_url in scraped_data:
                 if next_url not in visited_urls:
                     print(f"Adding to queue: {next_url}")
-                    url_queue.put(next_url)
+                    url_queue.append(next_url)
 
 if __name__ == "__main__":
-    url_queue = queue.Queue()
+    asyncio.run(init_db())
+    url_queue = ["https://www.merriam-webster.com/browse/dictionary"]
     visited_urls = set()
-    url_queue.put("https://www.merriam-webster.com/browse/dictionary")
 
-    process_queue(url_queue, visited_urls)
+    asyncio.run(process_queue(url_queue, visited_urls))
