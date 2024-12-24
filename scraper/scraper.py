@@ -1,27 +1,66 @@
-import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
 import re
 import aiosqlite
 from collections import deque
+import time
+import random
+import cloudscraper
+from user_agents import USER_AGENTS_LIST
 
+USER_AGENTS = USER_AGENTS_LIST
+scraper = cloudscraper.create_scraper()
+            
+RED = "\033[91m"
+YELLOW = "\033[93m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+
+def get_random_user_agent():
+    return random.choice(USER_AGENTS)
+
+def get_headers():
+    return {
+        'User-Agent': get_random_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Connection': 'keep-alive',
+        'Referer': 'https://www.google.com/',
+        'Upgrade-Insecure-Requests': '1',
+        'TE': 'Trailers'
+    }
+    
+def delay():
+    time.sleep(random.uniform(5, 12))
+    
 async def init_db():
-    async with aiosqlite.connect('words.db') as db:
+    async with aiosqlite.connect('../words.db') as db:
         await db.execute('''CREATE TABLE IF NOT EXISTS words
                             (word TEXT PRIMARY KEY, definition TEXT, pronunciation TEXT, word_type TEXT)''')
         await db.commit()
 
 async def save_to_db(word, definition, word_type, pronunciation):
-    async with aiosqlite.connect('words.db') as db:
-        await db.execute("INSERT OR IGNORE INTO words (word, definition, word_type, pronunciation) VALUES (?, ?, ?, ?)", (word, definition, word_type, pronunciation))
-        await db.commit()
-        
-        async with db.execute("SELECT 1 FROM words WHERE word = ?", (word,)) as cursor:
-            entry = await cursor.fetchone()
-            if entry:
-                print(f"Confirmed entry: {word}")
+    max_retries = 5
+
+    for attempt in range(max_retries):
+        try:
+            async with aiosqlite.connect('../words.db') as db:
+                await db.execute("INSERT OR IGNORE INTO words (word, definition, word_type, pronunciation) VALUES (?, ?, ?, ?)", (word, definition, word_type, pronunciation))
+                await db.commit()
+                
+                async with db.execute("SELECT 1 FROM words WHERE word = ?", (word,)) as cursor:
+                    entry = await cursor.fetchone()
+                    if entry:
+                        print(f"{GREEN}Confirmed entry: {word}{RESET}")
+                    else:
+                        print(f"{RED}Failed to confirm entry: {word}{RESET}")
+            break
+        except aiosqlite.OperationalError as e:
+            if "database is locked" in str(e):
+                print(f"Database is locked, skipping entry: {word}")
+                break
             else:
-                print(f"Entry for word '{word}' not found.")
+                raise
 
 def is_word_clean(word):
     if " " in word or len(word) < 3 or len(word) > 20 or "-" in word:
@@ -29,7 +68,7 @@ def is_word_clean(word):
     return True
 
 async def is_in_db(word):
-    async with aiosqlite.connect('words.db') as db:
+    async with aiosqlite.connect('../words.db') as db:
         async with db.execute("SELECT * FROM words WHERE word = ?", (word,)) as cursor:
             entry = await cursor.fetchone()
             if entry:
@@ -41,18 +80,19 @@ def clean_description(description):
     
 def is_word_fully_defined(soup, word_attributes):
     
-    found_pronunciation = soup.find('span', class_='word-syllables-entry') 
-    found_word_type = soup.find('h2', class_='parts-of-speech') 
-    found_defintion = soup.find('div', class_='sense')
-    
+    found_pronunciation = soup.find('span', class_='word-syllables-entry')
     if found_pronunciation is None:
-        print("Pronunciation not found")
+        print(f"{RED}Pronunciation not found{RESET}")
         return False
+        
+    found_word_type = soup.find('h2', class_='parts-of-speech') 
     if found_word_type is None:
-        print("Word Type not found")
+        print(f"{RED}Word Type not found{RESET}")
         return False
+        
+    found_defintion = soup.find('div', class_='sense')
     if found_defintion is None:
-        print("Definition not found")
+        print(f"{RED}Definition not found{RESET}")
         return False
     
     word_attributes['pronunciation'] = found_pronunciation.text
@@ -64,19 +104,19 @@ def is_word_fully_defined(soup, word_attributes):
 async def does_word_pass_all_checks(soup, word_attributes):
     word_attributes['word'] = soup.find('h1').text.capitalize()
     word = word_attributes['word']
-    
-    print(f"Checking word '{word}'")
+
+    print(f"{YELLOW}Checking word '{word}'{RESET}")
     
     if not is_word_fully_defined(soup, word_attributes):
-        print(f"Word '{word}' is not fully defined. Skipping.")
+        print(f"{RED}Word '{word}' is not fully defined. Skipping.{RESET}")
         return False
 
     if not is_word_clean(word):
-        print(f"Word '{word}' is not clean. Skipping.")
+        print(f"{RED}Word '{word}' is not clean. Skipping.{RESET}")
         return False
             
     if await is_in_db(word):
-        print(f"Word '{word}' is in database already. Skipping.")
+        print(f"{GREEN}Word '{word}' is in database already. Skipping.{RESET}")
         return False
     return True
 
@@ -86,21 +126,29 @@ def print_word_attributes(word_attributes):
     print(f"Word Type: {word_attributes['word_type']}")
     print(f"Pronunciation: {word_attributes['pronunciation']}")
 
-async def find_word_and_definition(session, url):
+async def find_word_and_definition(url):
     url = clean_url(url)
     try:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
+        headers = get_headers()
+
+        response = await asyncio.to_thread(scraper.get, url, headers=headers)
+        response.raise_for_status()
+        text = response.text
+        soup = await asyncio.get_event_loop().run_in_executor(None, BeautifulSoup, text, 'html.parser' )
+        
+        word_attributes = {'word': '', 'definition': '', 'word_type': '', 'pronunciation': ''}
+        if await does_word_pass_all_checks(soup, word_attributes):
+            word = word_attributes['word']
+            pronunciation = word_attributes['pronunciation']
+            word_type = word_attributes['word_type']
+            definition = word_attributes['definition']
             
-            word_attributes = {'word': '', 'definition': '', 'word_type': '', 'pronunciation': ''}
-            
-            if await does_word_pass_all_checks(soup, word_attributes):
-                print_word_attributes(word_attributes)
-                await save_to_db(word_attributes['word'], word_attributes['definition'], word_attributes['word_type'], word_attributes['pronunciation'])
-                
-    except aiohttp.ClientError as e:
+            print(f"Word: {word}")
+            print(f"Pronunciation: {pronunciation}")
+            print(f"Word Type: {word_type}")
+            print(f"Definition: {definition}")
+            await save_to_db(word, definition, pronunciation, word_type)
+    except cloudscraper.exceptions.CloudflareChallengeError as e:
         print(f"Failed to retrieve {url}: {e}")
 
 def clean_url(url):
@@ -108,7 +156,8 @@ def clean_url(url):
         return "https://www.merriam-webster.com" + url
     return url
 
-async def find_urls(session, soup, visited_urls):
+async def find_urls(soup, visited_urls):
+    index = 0
     url_frontier = []
     for link in soup.find_all('a'):
         href = link.get('href')
@@ -118,25 +167,39 @@ async def find_urls(session, soup, visited_urls):
                 if re.search(r'/browse/dictionary/', href):
                     url_frontier.append(full_url)
                 elif re.search(r'/dictionary/\w+', href):
-                    await find_word_and_definition(session, full_url)
+                    await find_word_and_definition(full_url)
                     visited_urls.add(full_url)
+                    index += 1
+                    print(index)
+                    if index % 100 == 0:
+                        delay()
     return url_frontier
+semaphore = asyncio.Semaphore(5)
 
-async def scrape_website_for_urls(session, url, visited_urls):
-    try:
-        async with session.get(url) as response:
+async def scrape_website_for_urls(url, visited_urls, retries=5):
+
+    for attempt in range(retries):
+        headers = get_headers()
+        try:
+            response = await asyncio.to_thread(scraper.get, url, headers=headers)
             response.raise_for_status()
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            found_urls = await find_urls(session, soup, visited_urls)
+            text = response.text
+            soup = await asyncio.get_event_loop().run_in_executor(None, BeautifulSoup, text, 'html.parser')
+            found_urls = await find_urls(soup, visited_urls)
             return found_urls
-    except aiohttp.ClientError as e:
-        print(f"Failed to retrieve {url}: {e}")
-        return []
+        except cloudscraper.exceptions.CloudflareChallengeError as e:
+            print(f"Failed to retrieve {url}: {e}")
+            if attempt < retries - 1:
+                backoff_time = 2 ** attempt
+                print(f"Retrying {url} in {backoff_time} seconds (attempt {attempt + 1})")
+                time.sleep(backoff_time)
+            else:
+                return []
 
 async def process_queue(url_queue, visited_urls):
-    async with aiohttp.ClientSession() as session:
-        while url_queue:
+    while url_queue:
+        tasks = []
+        while url_queue and len(tasks) < 5: 
             url_to_scrape = url_queue.popleft()
             url_to_scrape = clean_url(url_to_scrape)
             print(f"Processing URL: {url_to_scrape}")
@@ -146,12 +209,15 @@ async def process_queue(url_queue, visited_urls):
                 continue
 
             visited_urls.add(url_to_scrape)
-            scraped_data = await scrape_website_for_urls(session, url_to_scrape, visited_urls)
+            tasks.append(scrape_website_for_urls(url_to_scrape, visited_urls))
 
+        results = await asyncio.gather(*tasks)
+        for scraped_data in results:
             for next_url in scraped_data:
                 if next_url not in visited_urls:
                     print(f"Adding to queue: {next_url}")
                     url_queue.append(next_url)
+        delay()
 
 if __name__ == "__main__":
     asyncio.run(init_db())
