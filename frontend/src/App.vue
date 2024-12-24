@@ -1,6 +1,16 @@
 <template>
   <div id="app">
-    <HelloWorld msg="Welcome to WordMe!" />
+    <div class="siteNameContainer">
+      WordMe!
+    </div>
+    <div class="mainContentContainer">
+      <section class="wordBox">
+        <h1 class="word">{word}</h1>
+        <h2 class="wordType">{wordType}</h2>
+        <section class="buttons">
+        </section>
+      </section>
+    </div>
   </div>
 </template>
 
