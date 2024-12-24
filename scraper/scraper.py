@@ -174,8 +174,8 @@ async def find_urls(soup, visited_urls):
                     if index % 100 == 0:
                         delay()
     return url_frontier
-semaphore = asyncio.Semaphore(5)
 
+semaphore = asyncio.Semaphore(5)
 async def scrape_website_for_urls(url, visited_urls, retries=5):
 
     for attempt in range(retries):
@@ -202,8 +202,9 @@ async def process_queue(url_queue, visited_urls):
         while url_queue and len(tasks) < 5: 
             url_to_scrape = url_queue.popleft()
             url_to_scrape = clean_url(url_to_scrape)
-            print(f"Processing URL: {url_to_scrape}")
 
+            print(f"Processing URL: {url_to_scrape}")
+            
             if url_to_scrape in visited_urls:
                 print(f"Already visited: {url_to_scrape}")
                 continue
