@@ -6,22 +6,10 @@ from collections import deque
 import time
 import random
 import cloudscraper
+from user_agents import USER_AGENTS_LIST
 
+USER_AGENTS = USER_AGENTS_LIST
 scraper = cloudscraper.create_scraper()
-
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3", 
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36", 
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", 
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36", 
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",
-    
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-    
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-]  
             
 RED = "\033[91m"
 YELLOW = "\033[93m"
@@ -46,22 +34,33 @@ def delay():
     time.sleep(random.uniform(5, 12))
     
 async def init_db():
-    async with aiosqlite.connect('words.db') as db:
+    async with aiosqlite.connect('../words.db') as db:
         await db.execute('''CREATE TABLE IF NOT EXISTS words
                             (word TEXT PRIMARY KEY, definition TEXT, pronunciation TEXT, word_type TEXT)''')
         await db.commit()
 
 async def save_to_db(word, definition, word_type, pronunciation):
-    async with aiosqlite.connect('words.db') as db:
-        await db.execute("INSERT OR IGNORE INTO words (word, definition, word_type, pronunciation) VALUES (?, ?, ?, ?)", (word, definition, word_type, pronunciation))
-        await db.commit()
-        
-        async with db.execute("SELECT 1 FROM words WHERE word = ?", (word,)) as cursor:
-            entry = await cursor.fetchone()
-            if entry:
-                print(f"{GREEN}Confirmed entry: {word}{RESET}")
+    max_retries = 5
+
+    for attempt in range(max_retries):
+        try:
+            async with aiosqlite.connect('../words.db') as db:
+                await db.execute("INSERT OR IGNORE INTO words (word, definition, word_type, pronunciation) VALUES (?, ?, ?, ?)", (word, definition, word_type, pronunciation))
+                await db.commit()
+                
+                async with db.execute("SELECT 1 FROM words WHERE word = ?", (word,)) as cursor:
+                    entry = await cursor.fetchone()
+                    if entry:
+                        print(f"{GREEN}Confirmed entry: {word}{RESET}")
+                    else:
+                        print(f"{RED}Failed to confirm entry: {word}{RESET}")
+            break
+        except aiosqlite.OperationalError as e:
+            if "database is locked" in str(e):
+                print(f"Database is locked, skipping entry: {word}")
+                break
             else:
-                print(f"Entry for word '{word}' not found.")
+                raise
 
 def is_word_clean(word):
     if " " in word or len(word) < 3 or len(word) > 20 or "-" in word:
@@ -69,7 +68,7 @@ def is_word_clean(word):
     return True
 
 async def is_in_db(word):
-    async with aiosqlite.connect('words.db') as db:
+    async with aiosqlite.connect('../words.db') as db:
         async with db.execute("SELECT * FROM words WHERE word = ?", (word,)) as cursor:
             entry = await cursor.fetchone()
             if entry:
