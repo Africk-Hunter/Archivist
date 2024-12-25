@@ -20,8 +20,8 @@ The actual web application for WordMe is built in Vue and connected to the backe
 
 ## Technologies Used
 
+- **Frontend**: Vue.js
 - **Backend**: Flask, Python
-- **Frontend**: Vue.js, JavaScript
 - **Web Scraping**: Python, BeautifulSoup
 - **Database**: SQLite
 
@@ -34,9 +34,9 @@ The actual web application for WordMe is built in Vue and connected to the backe
 
 ### 2. Running scraper (optional)
 
-- Navigate to `scraper/` & run `python scraper.py`
+- Navigate to `/scraper/` & run `python scraper.py`
 
 ### 3. Running web application
 
 - Navigate to `/frontend/` & run `npm run serve`
-- The frontend server will be available at `http://localhost:8080` and it will proxy API requests to the backend server running at `http://localhost:5000`.
+- The frontend server will be available at `http://localhost:8080`.

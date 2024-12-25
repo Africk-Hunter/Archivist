@@ -6,6 +6,7 @@ from collections import deque
 import time
 import random
 import cloudscraper
+from requests.exceptions import HTTPError
 from user_agents import USER_AGENTS_LIST
 
 USER_AGENTS = USER_AGENTS_LIST
@@ -127,14 +128,13 @@ def print_word_attributes(word_attributes):
     print(f"Pronunciation: {word_attributes['pronunciation']}")
 
 async def find_word_and_definition(url):
-    url = clean_url(url)
     try:
+        url = clean_url(url)
         headers = get_headers()
-
         response = await asyncio.to_thread(scraper.get, url, headers=headers)
         response.raise_for_status()
         text = response.text
-        soup = await asyncio.get_event_loop().run_in_executor(None, BeautifulSoup, text, 'html.parser' )
+        soup = await asyncio.get_event_loop().run_in_executor(None, BeautifulSoup, text, 'html.parser')
         
         word_attributes = {'word': '', 'definition': '', 'word_type': '', 'pronunciation': ''}
         if await does_word_pass_all_checks(soup, word_attributes):
@@ -149,7 +149,11 @@ async def find_word_and_definition(url):
             print(f"Definition: {definition}")
             await save_to_db(word, definition, pronunciation, word_type)
     except cloudscraper.exceptions.CloudflareChallengeError as e:
-        print(f"Failed to retrieve {url}: {e}")
+        print(f"{RED}Failed to retrieve {url}: {e}{RESET}")
+    except HTTPError as http_err:
+        print(f"{RED}HTTP error occurred: {http_err}{RESET}")
+    except Exception as e:
+        print(f"{RED}Other error occurred: {e}{RESET}")
 
 def clean_url(url):
     if url.startswith("/"):
@@ -204,7 +208,7 @@ async def process_queue(url_queue, visited_urls):
             url_to_scrape = clean_url(url_to_scrape)
 
             print(f"Processing URL: {url_to_scrape}")
-            
+
             if url_to_scrape in visited_urls:
                 print(f"Already visited: {url_to_scrape}")
                 continue
