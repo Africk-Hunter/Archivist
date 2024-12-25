@@ -2,37 +2,41 @@
 
 ## Description
 
-WordMe is a project that includes a Flask backend, a Vue.js frontend, and a web scraping script. The backend serves API endpoints, the frontend provides a user interface, and the scraper collects word definitions from the Merriam-Webster website.
+WordMe is a project that utilizes Vue, Python, and SQL to provide users random words and their 
+definitions, and optionally gives them the option to display a random word every few 
+seconds based on various timer options. WordMe is comprised of two main parts: The Scraper & The Web App
+
+### 1. The Scraper
+
+WordMe utilizes a web crawler/web scraper built in python to scrape and store words from the Merriam-Webster
+website, gathing their definitions, their type (noun, adjective, etc), and the pronunciation and storing them in a SQL database 
+`words.db`. The scraper only needs to be run once in order to collect and store all of the data, or to add words
+that are new to Merriam-Webster. If you're running this project locally, there will already be a populated  `words.db`, so running
+the scraper will not be necessary.
+
+### 2. The Application
+
+The actual web application for WordMe is built in Vue and connected to the backend using Flask.
 
 ## Technologies Used
 
 - **Backend**: Flask, Python
 - **Frontend**: Vue.js, JavaScript
-- **Web Scraping**: Python, BeautifulSoup, Requests
-- **API**: RESTful API (Flask)
-- **Database**: SQLite (Optional, for storing scraped data)
-### Backend
+- **Web Scraping**: Python, BeautifulSoup
+- **Database**: SQLite
 
-1. Navigate to the `backend/` directory.
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run the backend server: `python app.py`
+## Running Locally
 
-### Frontend
+### 1. Install Dependencies
 
-1. Navigate to the `frontend/` directory.
-2. Install dependencies: `npm install`
-3. Run the frontend server: `npm run serve`
+- Navigate to `WordMe/` root directory & run `pip install -r requirements.txt`
+- Navigate to `/frontend/` & run `npm install`
 
-### Scraper
+### 2. Running scraper (optional)
 
-1. Navigate to the `scraper/` directory.
-2. Install dependencies: `pip install -r requirements.txt`
-3. Run the scraper: `python scraper.py`
+- Navigate to `scraper/` & run `python scraper.py`
 
-### Running the Project Locally
+### 3. Running web application
 
-1. Start the backend server by following the steps in the Backend setup section.
-2. Start the frontend server by following the steps in the Frontend setup section.
-3. Optionally, run the scraper by following the steps in the Scraper setup section.
-
-The frontend server will be available at `http://localhost:8080` and it will proxy API requests to the backend server running at `http://localhost:5000`.
+- Navigate to `/frontend/` & run `npm run serve`
+- The frontend server will be available at `http://localhost:8080` and it will proxy API requests to the backend server running at `http://localhost:5000`.
