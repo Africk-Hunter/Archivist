@@ -2,7 +2,7 @@
   <div id="app">
     <SiteTopBar />
     <div class="mainContentContainer">
-      <WordBox :word="word" :wordType="wordType" :fetchWord/>
+      <WordBox :word="word" :wordType="wordType" :fetchWord :nextWord :previousWord :wordIndex />
       <TimerBar />
       <DescriptionContainer :pronunciation="pronunciation" :definition="definition" />
     </div>
@@ -29,27 +29,90 @@ export default {
       axios.get('http://localhost:5000/fetch-new-word')
         .then(response => {
           this.populateWord(response.data);
+          this.addWordToLocalStorage();
         })
         .catch(error => {
           console.error('Error fetching word:', error);
         });
     },
+
     populateWord(response) {
       this.word = response.word;
       this.wordType = response.wordType;
       this.pronunciation = response.pronunciation;
       this.definition = response.definition;
-    }
+    },
+
+    addWordToLocalStorage() {
+      const word = {
+        word: this.word,
+        wordType: this.wordType,
+        pronunciation: this.pronunciation,
+        definition: this.definition
+      };
+
+      let words = JSON.parse(localStorage.getItem('words')) || [];
+      localStorage.setItem('words', JSON.stringify([...words, word]));
+      words.push(word);
+      localStorage.setItem('words', JSON.stringify(words));
+    },
+
+    fetchWordFromLocalStorage(index) {
+      const words = JSON.parse(localStorage.getItem('words')) || [];
+      if (index >= 0 && index < words.length) {
+        this.populateWord(words[index]);
+      }
+    },
+
+    previousWord() {
+      if (this.wordIndex === 0) {
+        return;
+      }
+      this.wordIndex--;
+      this.togglePreviousButton();
+      this.fetchWordFromLocalStorage(this.wordIndex);
+    },
+
+    nextWord() {
+      if (this.wordIndex < JSON.parse(localStorage.getItem('words')).length - 1) {
+        this.wordIndex++;
+        this.fetchWordFromLocalStorage(this.wordIndex);
+      } else {
+        this.fetchWord();
+        this.wordIndex++;
+      }
+      this.togglePreviousButton();
+    },
+
+    updateWordIndex() {
+      this.wordIndex = newWordIndex;
+    },
+
+    togglePreviousButton() {
+      if (this.wordIndex === 0) {
+        document.getElementById('previous').classList.add('disabled');
+      } else {
+        document.getElementById('previous').classList.remove('disabled');
+      }
+    },
   },
+
   beforeMount() {
     this.fetchWord();
+    localStorage.clear();
   },
+
+  mounted() {
+    this.togglePreviousButton();
+  },
+
   data() {
     return {
       word: "",
       wordType: "",
       pronunciation: "",
       definition: "",
+      wordIndex: 0
     };
   }
 };

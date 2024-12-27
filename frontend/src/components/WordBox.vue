@@ -5,8 +5,8 @@
             <h2 class="wordType">{{ wordType }}</h2>
         </div>
         <section class="buttons">
-            <button @click='previousWord' class="previousWord"><img src="/images/previousButton.svg" alt="Previous Word"
-                    class="navigationButton"></button>
+            <button @click='previousWord' class="previousWord" id="previous"><img src="/images/previousButton.svg"
+                    alt="Previous Word" class="navigationButton"></button>
             <button @click='nextWord' class="nextWord"><img src="/images/nextButton.svg" alt="Next Word"
                     class="navigationButton"></button>
         </section>
@@ -16,18 +16,12 @@
 <script>
 export default {
     name: 'WordBox',
-    methods: {
-        previousWord() {
-            
-        },
-        nextWord() {
-            this.fetchWord();
-        }
-    },
     props: {
         word: String,
         wordType: String,
-        fetchWord: Function
+        fetchWord: Function,
+        nextWord: Function,
+        previousWord: Function,
     }
 };
 </script>
@@ -80,6 +74,11 @@ export default {
 
 .navigationButton:active {
     transform: scale(0.9);
+}
+
+.disabled {
+    opacity: .5;
+    pointer-events: none;
 }
 
 @media (min-width: 768px) {
