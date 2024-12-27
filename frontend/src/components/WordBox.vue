@@ -85,12 +85,13 @@ export default {
 @media (min-width: 768px) {
 
     .wordBox {
-        width: 40rem;
+        min-width: 40rem;
+        width: fit-content;
         gap: .75rem;
     }
 
     .word {
-        font-size: 5rem;
+        font-size: 4rem;
     }
 
     .wordType {

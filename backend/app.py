@@ -15,21 +15,36 @@ def is_letter_valid(letter):
 def analyze_sub_description():
     pass
 
+def is_first_letter_in_definition(first_letter_passed, letter):
+    return (not first_letter_passed and is_letter_valid(letter))
+
+def starts_with_a_or_b(old_string):
+    return old_string.startswith('a') or old_string.startswith('b')    
+
 def format_description(old_string):
-    string = ''
+    string              = ''
     first_letter_passed = False
-    if old_string[0] != ':':
+
+    if starts_with_a_or_b(old_string):
+        colon_index = old_string.find(':')
+        if colon_index != -1:
+            old_string = old_string[colon_index + 1:].strip()
+
+    if not old_string.startswith(': '):
         string += ': '
+
     for index, letter in enumerate(old_string):
-        if not first_letter_passed and is_letter_valid(letter):
+        if letter == ':' and index == 0:
+            string += letter
+            string += ' '   
+        if is_first_letter_in_definition(first_letter_passed, letter):
             string += letter.upper()
             first_letter_passed = True
-        elif first_letter_passed:
+        elif first_letter_passed and letter != ':':
             string += letter
         if letter == ':' and index != 0:
-            string += '\n'
-            string += old_string[index + 1:]
-            break
+            string += '\n\n: '
+            first_letter_passed = False
     return string
 
 @app.route('/fetch-new-word', methods=['GET'])
