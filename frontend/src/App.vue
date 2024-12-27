@@ -2,7 +2,7 @@
   <div id="app">
     <SiteTopBar />
     <div class="mainContentContainer">
-      <WordBox :word="word" :wordType="wordType" />
+      <WordBox :word="word" :wordType="wordType" :fetchWord/>
       <TimerBar />
       <DescriptionContainer :pronunciation="pronunciation" :definition="definition" />
     </div>
@@ -14,6 +14,7 @@ import SiteTopBar from './components/SiteTopBar.vue';
 import WordBox from './components/WordBox.vue';
 import TimerBar from './components/TimerBar.vue';
 import DescriptionContainer from './components/DescriptionContainer.vue';
+import axios from 'axios';
 
 export default {
   name: 'App',
@@ -23,12 +24,32 @@ export default {
     TimerBar,
     DescriptionContainer
   },
+  methods: {
+    fetchWord() {
+      axios.get('http://localhost:5000/fetch-new-word')
+        .then(response => {
+          this.populateWord(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching word:', error);
+        });
+    },
+    populateWord(response) {
+      this.word = response.word;
+      this.wordType = response.wordType;
+      this.pronunciation = response.pronunciation;
+      this.definition = response.definition;
+    }
+  },
+  beforeMount() {
+    this.fetchWord();
+  },
   data() {
     return {
-      word: "Archivist",
-      wordType: "Noun",
-      pronunciation: "ar·​chi·​vist",
-      definition: ": a person who has the job of collecting and storing the materials in an archive",
+      word: "",
+      wordType: "",
+      pronunciation: "",
+      definition: "",
     };
   }
 };
@@ -83,7 +104,7 @@ button {
 .mainContentContainer {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   margin: 8rem 0 0 0;
   width: 22rem;

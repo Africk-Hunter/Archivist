@@ -3,15 +3,15 @@
 ## Description
 
 WordMe is a project that utilizes Vue, Python, and SQL to provide users random words and their 
-definitions, and optionally gives them the option to display a random word every few 
-seconds based on various timer options. WordMe is comprised of two main parts: The Scraper & The Web App
+definitions, and gives them the option to display a random word every few seconds based on various 
+timer options. WordMe is comprised of two main parts: The Scraper & The Web App
 
 ### 1. The Scraper
 
 WordMe utilizes a web crawler/web scraper built in python to scrape and store words from the Merriam-Webster
 website, gathing their definitions, their type (noun, adjective, etc), and the pronunciation and storing them in a SQL database 
 `words.db`. The scraper only needs to be run once in order to collect and store all of the data, or to add words
-that are new to Merriam-Webster. If you're running this project locally, there will already be a populated  `words.db`, so running
+that are new to Merriam-Webster. If you're running this project locally, there will already be a populated `words.db`, so running
 the scraper will not be necessary.
 
 ### 2. The Application

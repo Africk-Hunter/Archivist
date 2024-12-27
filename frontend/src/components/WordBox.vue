@@ -18,15 +18,16 @@ export default {
     name: 'WordBox',
     methods: {
         previousWord() {
-            /* Return the last word */
+            
         },
         nextWord() {
-            /* Go to next word */
+            this.fetchWord();
         }
     },
     props: {
         word: String,
-        wordType: String
+        wordType: String,
+        fetchWord: Function
     }
 };
 </script>
@@ -44,14 +45,14 @@ export default {
 
 .word {
     margin: 0;
-    font-size: 3rem;
+    font-size: clamp(1rem, 8vw, 3rem);
     font-weight: 500;
     font-family: 'Montserrat', sans-serif;
 }
 
 .wordType {
     margin: 0;
-    font-size: 2rem;
+    font-size: clamp(1rem, 8vw, 3rem);
     font-weight: 400;
     font-style: italic;
     font-size: 1.5rem;
