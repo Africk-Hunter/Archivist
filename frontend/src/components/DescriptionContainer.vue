@@ -31,11 +31,15 @@ p {
 .pronunciation {
     font-size: 1.5rem;
     font-weight: 400;
+    opacity: .75;
+    font-size: clamp(1rem, 5vw, 1.35rem);
 }
 
 .definition {
     font-size: 1.6rem;
     font-weight: 400;
+    font-size: clamp(1rem, 5vw, 1.5rem);
+    white-space: pre-wrap;
 }
 
 @media (min-width: 768px) {

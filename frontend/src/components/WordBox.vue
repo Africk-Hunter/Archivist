@@ -5,8 +5,8 @@
             <h2 class="wordType">{{ wordType }}</h2>
         </div>
         <section class="buttons">
-            <button @click='previousWord' class="previousWord"><img src="/images/previousButton.svg" alt="Previous Word"
-                    class="navigationButton"></button>
+            <button @click='previousWord' class="previousWord" id="previous"><img src="/images/previousButton.svg"
+                    alt="Previous Word" class="navigationButton"></button>
             <button @click='nextWord' class="nextWord"><img src="/images/nextButton.svg" alt="Next Word"
                     class="navigationButton"></button>
         </section>
@@ -16,17 +16,12 @@
 <script>
 export default {
     name: 'WordBox',
-    methods: {
-        previousWord() {
-            /* Return the last word */
-        },
-        nextWord() {
-            /* Go to next word */
-        }
-    },
     props: {
         word: String,
-        wordType: String
+        wordType: String,
+        fetchWord: Function,
+        nextWord: Function,
+        previousWord: Function,
     }
 };
 </script>
@@ -44,14 +39,14 @@ export default {
 
 .word {
     margin: 0;
-    font-size: 3rem;
+    font-size: clamp(1rem, 8vw, 3rem);
     font-weight: 500;
     font-family: 'Montserrat', sans-serif;
 }
 
 .wordType {
     margin: 0;
-    font-size: 2rem;
+    font-size: clamp(1rem, 8vw, 3rem);
     font-weight: 400;
     font-style: italic;
     font-size: 1.5rem;
@@ -81,15 +76,21 @@ export default {
     transform: scale(0.9);
 }
 
+.disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+
 @media (min-width: 768px) {
 
     .wordBox {
-        width: 40rem;
+        min-width: 40rem;
+        width: fit-content;
         gap: .75rem;
     }
 
     .word {
-        font-size: 5rem;
+        font-size: 4rem;
     }
 
     .wordType {

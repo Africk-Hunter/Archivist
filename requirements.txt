@@ -2,3 +2,5 @@ aiosqlite==0.20.0
 beautifulsoup4==4.10.0
 cloudscraper==1.2.71
 Flask==3.1.0
+Flask_Cors==5.0.0
+Requests==2.32.3
