@@ -7,7 +7,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return "Welcome to the WordMe API"
+    return "Welcome to the Archivist API"
 
 def is_letter_valid(letter):
     return letter.isalpha()

@@ -1,6 +1,6 @@
 <template>
   <div class="siteTopBar">
-    <p class="siteName">WordMe!</p>
+    <p class="siteName">Archivist</p>
     <button @click='showHelp' class="siteInfo"><img src="/images/websiteHelp.svg" alt="Help"
         class="siteInfoImg"></button>
   </div>

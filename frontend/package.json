@@ -1,5 +1,5 @@
 {
-  "name": "wordme",
+  "name": "archivist",
   "version": "1.0.0",
   "description": "A project that includes a Flask backend, a Vue.js frontend, and a web scraping script.",
   "main": "src/main.js",
