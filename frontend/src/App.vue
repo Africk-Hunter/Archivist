@@ -16,6 +16,8 @@ import TimerBar from './components/TimerBar.vue';
 import DescriptionContainer from './components/DescriptionContainer.vue';
 import axios from 'axios';
 
+axios.defaults.baseURL = process.env.VUE_APP_API_BASE_URL;
+
 export default {
   name: 'App',
   components: {
@@ -26,7 +28,7 @@ export default {
   },
   methods: {
     fetchWord() {
-      axios.get('http://localhost:5000/fetch-new-word')
+      axios.get(`/fetch-new-word`)
         .then(response => {
           this.populateWord(response.data);
           this.addWordToLocalStorage();
