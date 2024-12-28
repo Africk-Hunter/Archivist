@@ -2,10 +2,10 @@ from flask import Flask, jsonify
 import sqlite3
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
+application = Flask(__name__)
+CORS(application)
 
-@app.route('/')
+@application.route('/')
 def home():
     return "Welcome to the Archivist API"
 
@@ -47,7 +47,7 @@ def format_description(old_string):
             first_letter_passed = False
     return string
 
-@app.route('/fetch-new-word', methods=['GET'])
+@application.route('/fetch-new-word', methods=['GET'])
 def fetch_new_word():
     conn = sqlite3.connect('./words.db')
     cursor = conn.cursor()
@@ -70,4 +70,5 @@ def fetch_new_word():
     return response
 
 if __name__ == '__main__':
-    """ app.run(debug=True) """
+    """ application.run(debug=True) """
+    application.run(host='0.0.0.0', port=5000)

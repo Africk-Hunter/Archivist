@@ -1,3 +1,5 @@
+
+
 # Logs
 logs
 *.log
@@ -131,3 +133,9 @@ dist
 
 
 __pycache__/
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+backend/archivist-v1.1.zip
+backend/requirements.txt
