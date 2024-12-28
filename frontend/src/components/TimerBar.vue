@@ -94,7 +94,7 @@ export default {
     opacity: 0;
     user-select: none;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .timerButton:active {
@@ -116,6 +116,10 @@ export default {
     opacity: 1;
     user-select: all;
     pointer-events: all;
+}
+
+.timerButton.active{
+    transform: scale(1.2);
 }
 
 .timerButton.active img {

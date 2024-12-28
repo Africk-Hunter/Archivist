@@ -147,6 +147,7 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: .5rem 1rem;
   font-family: 'Montserrat', sans-serif;
 }
@@ -169,8 +170,8 @@ button {
   flex-direction: column;
   align-items: flex-start;
   gap: 1rem;
-  margin: 8rem 0 0 0;
   width: 22rem;
+  
 }
 
 .siteName {
