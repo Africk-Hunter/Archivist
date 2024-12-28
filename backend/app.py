@@ -49,7 +49,7 @@ def format_description(old_string):
 
 @app.route('/fetch-new-word', methods=['GET'])
 def fetch_new_word():
-    conn = sqlite3.connect('/words.db')
+    conn = sqlite3.connect('../words.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM words ORDER BY RANDOM() LIMIT 1')
     results = cursor.fetchall()
