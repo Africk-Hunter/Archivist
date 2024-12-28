@@ -3,7 +3,7 @@
     <SiteTopBar />
     <div class="mainContentContainer">
       <WordBox :word="word" :wordType="wordType" :fetchWord :nextWord :previousWord :wordIndex />
-      <TimerBar />
+      <TimerBar :nextWord/>
       <DescriptionContainer :pronunciation="pronunciation" :definition="definition" />
     </div>
   </div>
