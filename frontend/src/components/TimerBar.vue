@@ -43,6 +43,17 @@ export default {
                 if (index != this.activeButton) {
                     if (time === "c") {
                         time = prompt("Enter a custom time in seconds");
+                        if (time === '0') {
+                            alert("Please enter a time greater than 0");
+                            return;
+                        }
+                        if (time < 0) {
+                            alert("Please enter a time greater than 0");
+                            return;
+                        }
+                        if (time === null) {
+                            return;
+                        }
                     }
                     clearInterval(this.timerInterval);
                     this.activeButton = index;
@@ -53,6 +64,14 @@ export default {
             } else {
                 if (time === "c") {
                     time = prompt("Enter a custom time in seconds");
+                    if (time === '0') {
+                        alert("Please enter a time greater than 0");
+                        return;
+                    }
+                    if (time < 0) {
+                        alert("Please enter a time greater than 0");
+                        return;
+                    }
                     if (time === null) {
                         return;
                     }
@@ -82,9 +101,17 @@ export default {
 
 <style scoped>
 .timerBar {
+
     display: flex;
     width: 100%;
     gap: .5rem;
+    user-select: none;
+}
+
+@media screen and (max-width: 768px) {
+    .timerBar {
+        gap: .25rem;
+    }
 }
 
 .timerButton {
@@ -118,7 +145,7 @@ export default {
     pointer-events: all;
 }
 
-.timerButton.active{
+.timerButton.active {
     transform: scale(1.2);
 }
 

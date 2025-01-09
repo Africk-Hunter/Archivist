@@ -3,7 +3,7 @@
     <SiteTopBar />
     <div class="mainContentContainer">
       <WordBox :word="word" :wordType="wordType" :fetchWord :nextWord :previousWord :wordIndex />
-      <TimerBar :nextWord/>
+      <TimerBar :nextWord />
       <DescriptionContainer :pronunciation="pronunciation" :definition="definition" />
     </div>
   </div>
@@ -173,7 +173,7 @@ button {
   align-items: flex-start;
   gap: 1rem;
   width: 22rem;
-  
+
 }
 
 .siteName {
