@@ -16,7 +16,7 @@ the scraper will not be necessary.
 
 ### 2. The Application
 
-The actual web application for Archivist is built in Vue and connected to the backend using Flask.
+The actual web application for Archivist is built in Vue and connected to the backend using Flask. The frontend is hosted on Netlifty and the backend is hosted on AWS Elastic Beanstalk.
 
 ## Technologies Used
 
